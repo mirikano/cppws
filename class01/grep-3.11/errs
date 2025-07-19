@@ -1,0 +1,21 @@
+/Library/Developer/CommandLineTools/usr/bin/make  all-recursive
+Making all in po
+make[2]: Nothing to be done for `all'.
+Making all in lib
+/Library/Developer/CommandLineTools/usr/bin/make  all-am
+make[3]: Nothing to be done for `all-am'.
+Making all in doc
+make[2]: Nothing to be done for `all'.
+Making all in src
+make[2]: Nothing to be done for `all'.
+Making all in tests
+make[2]: Nothing to be done for `all'.
+Making all in gnulib-tests
+## ---------------------------------------------------- ##
+## ------------------- Gnulib tests ------------------- ##
+## You can ignore compiler warnings in this directory.  ##
+## ---------------------------------------------------- ##
+/Library/Developer/CommandLineTools/usr/bin/make  all-recursive
+Making all in .
+make[4]: Nothing to be done for `all-am'.
+make[2]: Nothing to be done for `all-am'.

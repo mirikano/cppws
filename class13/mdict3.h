@@ -27,12 +27,14 @@ class mdict3 {
 
 	std::map<utf8string, std::map<utf8string, std::map<utf8string, std::map<utf8string, counter>>>>	dict;
     std::map<utf8string, counter> start_dict;
+	std::map<utf8, std::map<utf8string, int>> hint_table;
     
     public:
         typedef std::map<utf8string, std::map<utf8string, std::map<utf8string, std::map<utf8string, counter>>>>::iterator l1_iterator;
         typedef std::map<utf8string, std::map<utf8string, std::map<utf8string, counter>>>::iterator l2_iterator;
         typedef std::map<utf8string, std::map<utf8string, counter>>::iterator l3_iterator;
         typedef std::map<utf8string, counter>::iterator l4_iterator;
+		typedef std::map<utf8, std::map<utf8string, int>>::iterator h_iteretor;
 
 		void load(const std::string);
 		void dump(std::ostream&);
@@ -43,6 +45,7 @@ class mdict3 {
 		utf8string get_next(const utf8string&);
 		utf8string get_next(const utf8string&, const utf8string&);
         utf8string get_next(const utf8string&, const utf8string&, const utf8string&);
+		utf8string get_hint(const utf8string&);
 
 };
 

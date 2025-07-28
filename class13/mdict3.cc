@@ -8,22 +8,18 @@
 #include <fstream>
 #include <cstdlib>
 #include <ctime>
+#include <string>
 
 
 bool is_jyoshi (const utf8string& us) {
     if (us.size() != 1) {
         return false;
     }
-    const std::vector<utf8string> jyoshi_list = {
+    static const std::vector<utf8string> jyoshi_list = {
         "は", "が", "と", "に", "の", "へ", "も", "を"
     };
-    std::vector<utf8string>::const_iterator p1;
-    for(p1 = jyoshi_list.begin(); p1 != jyoshi_list.end(); p1++) {
-        if (us == *p1) {
-            return true;
-        }
-    }
-    return false;
+
+    return std::find(jyoshi_list.begin(), jyoshi_list.end(), us) != jyoshi_list.end();
 }
 
 
@@ -35,20 +31,27 @@ void mdict3::load(const std::string fname) {
         exit(2);
     }
     std::vector<utf8string> morpheme_list;
-    utf8string morpheme_buf;
-    utf8::CharType prev_charType = utf8::NONE;
-    utf8 c_char;
-    while(ifs >> c_char) {
-        utf8::CharType c_charType = c_char.get_chartype();
-        utf8string c_char_us;
-        c_char_us.push_back(c_char);
-        if ((prev_charType == utf8::KANJI || prev_charType == utf8::KATAKANA || prev_charType == utf8::SYMBOL) && is_jyoshi(c_char_us)) {
-            if (!morpheme_buf.empty()) {
-                morpheme_list.push_back(morpheme_buf);
-            }
-            morpheme_list.push_back(c_char_us);
-            morpheme_buf.clear();
-            prev_charType = utf8::NONE;
+    std::string line;
+    while(std::getline(ifs, line)) {
+        if (line.empty()) continue;
+
+        utf8string u_line(line);
+        utf8string morpheme_buf;
+        utf8::CharType prev_charType = utf8::NONE;
+
+        for (utf8string::const_iterator it = u_line.begin(); it != u_line.end(); it++) {
+            const utf8& c_char = *it;
+
+            utf8::CharType c_charType = c_char.get_chartype();
+            utf8string c_char_us;
+            c_char_us.push_back(c_char);
+            if ((prev_charType == utf8::KANJI || prev_charType == utf8::KATAKANA || prev_charType == utf8::SYMBOL) && is_jyoshi(c_char_us)) {
+                if (!morpheme_buf.empty()) {
+                    morpheme_list.push_back(morpheme_buf);
+                }
+                morpheme_list.push_back(c_char_us);
+                morpheme_buf.clear();
+                prev_charType = utf8::NONE;
             } else if (prev_charType != utf8::NONE && c_charType != prev_charType) {
                 if (!morpheme_buf.empty()) {
                     morpheme_list.push_back(morpheme_buf);
@@ -63,20 +66,32 @@ void mdict3::load(const std::string fname) {
                 }
             }
         }
+    
         if (!morpheme_buf.empty()) {
             morpheme_list.push_back(morpheme_buf); 
         }
         ifs.close();
-        if (morpheme_list.size() >= 4) {
-            for(size_t i = 0; i <= morpheme_list.size() - 4; i++) {
+    }
+    
+    if (morpheme_list.size() >= 4) {
+        for(size_t i = 0; i <= morpheme_list.size() - 4; i++) {
             const utf8string& m1 = morpheme_list[i];
-            add_morphemes(m1, morpheme_list[i + 1], morpheme_list[i + 2], morpheme_list[i + 3]);
+            const utf8string& m2 = morpheme_list[i+1];
+            add_morphemes(m1, m2, morpheme_list[i+2], morpheme_list[i+3]);
+
             utf8::CharType m1_Type = m1.at(0).get_chartype();
+            if(m1_Type == utf8::KANJI || m1_Type == utf8::KATAKANA){
+                for(utf8string::const_iterator it = m1.begin(); it != m1.end(); it++){
+                    const utf8& character_key = *it;
+                    hint_table[character_key][m1]++;
+                }
+            }
             if (m1_Type == utf8::KANJI || m1_Type == utf8::KATAKANA) {
                 start_dict[m1].times++;
             }
         }
     }
+
     srandom(time(NULL));
     update_counters();
     int sum = 0;
@@ -253,4 +268,38 @@ utf8string mdict3::get_next(const utf8string& c1, const utf8string& c2, const ut
 
     static const utf8string default_symbol("error");
     return default_symbol;
+}
+
+utf8string mdict3::get_hint(const utf8string& theme) {
+    if (dict.count(theme) > 0 || start_dict.count(theme) > 0) {
+        return theme;
+    }
+
+    if (theme.empty()) {
+        return utf8string("");
+    }
+    int random_char_index = random() % theme.size();
+    utf8 char_key = theme.at(random_char_index);
+
+    std::map<utf8, std::map<utf8string, int> >::const_iterator it = hint_table.find(char_key);
+    if (it == hint_table.end() || it->second.empty()) {
+        return utf8string(""); 
+    }
+
+    int total_count = 0;
+    for (std::map<utf8string, int>::const_iterator pair_it = it->second.begin(); pair_it != it->second.end(); pair_it++) {
+        total_count += pair_it->second;
+    }
+    if (total_count == 0) {
+        return utf8string("");
+    }
+    int random_index = random() % total_count;
+    for (std::map<utf8string, int>::const_iterator pair_it = it->second.begin(); pair_it != it->second.end(); pair_it++) {
+        if (random_index < pair_it->second) {
+            return pair_it->first;
+        }
+        random_index -= pair_it->second;
+    }
+    
+    return it->second.begin()->first;
 }

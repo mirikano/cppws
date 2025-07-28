@@ -21,6 +21,7 @@ int main(int argc, char* argv[]) {
     }
     string dictionary = argv[1];
     int num;
+    cout << "生成する文の数を入力してください：";
     cin >> num;
 
     mdict3 dict;
